@@ -4,7 +4,8 @@ from .models import Author, Book, Member, Loan
 from .serializers import AuthorSerializer, BookSerializer, MemberSerializer, LoanSerializer
 from rest_framework.decorators import action
 from django.utils import timezone
-from .tasks import send_loan_notification
+from .tasks import send_loan_notification, check_overdue_loans
+from datetime import date, datetime, timedelta
 
 class AuthorViewSet(viewsets.ModelViewSet):
     queryset = Author.objects.all()
@@ -13,7 +14,6 @@ class AuthorViewSet(viewsets.ModelViewSet):
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-
     @action(detail=True, methods=['post'])
     def loan(self, request, pk=None):
         book = self.get_object()
@@ -52,3 +52,27 @@ class MemberViewSet(viewsets.ModelViewSet):
 class LoanViewSet(viewsets.ModelViewSet):
     queryset = Loan.objects.all()
     serializer_class = LoanSerializer
+    check_overdue_loans.apply_async(eta=timezone.now())
+
+    def perform_create(self, serializer):
+        now = datetime.now()
+        days14_date = timedelta(days=14)
+        due = now+days14_date
+        loan = serializer.save()
+        loan.due_date = due
+        loan.save()
+
+    @action(detail=True, methods=['post'])
+    #
+    def extend_due_date (self, request, pk=None):
+        loan = self.get_object()
+        additional_days = 9
+        now = datetime.now()
+        extention = timedelta(days=additional_days)
+        due = now+extention
+        try:
+            loan.due_date = due
+            loan.save
+        except Loan.DoesNotExist:
+            return Response({'error': 'Loan does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'status': 'Days added successfully.'}, status=status.HTTP_201_CREATED)

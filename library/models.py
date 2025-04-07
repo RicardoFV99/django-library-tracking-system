@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import date, datetime, timedelta
 
 class Author(models.Model):
     first_name = models.CharField(max_length=100)
@@ -35,10 +36,18 @@ class Member(models.Model):
     def __str__(self):
         return self.user.username
 
+# # Current time
+# now = datetime.now()
+
+# # timedelta of 30 days
+# one_month = timedelta(days=30)
+# today = datetime.date.today()
+# day = datetime.timedelta(days = 1)
 class Loan(models.Model):
     book = models.ForeignKey(Book, related_name='loans', on_delete=models.CASCADE)
     member = models.ForeignKey(Member, related_name='loans', on_delete=models.CASCADE)
     loan_date = models.DateField(auto_now_add=True)
+    due_date = models.DateField(blank = True, null=True)
     return_date = models.DateField(null=True, blank=True)
     is_returned = models.BooleanField(default=False)
 
