@@ -63,7 +63,6 @@ class LoanViewSet(viewsets.ModelViewSet):
         loan.save()
 
     @action(detail=True, methods=['post'])
-    #
     def extend_due_date (self, request, pk=None):
         loan = self.get_object()
         additional_days = 9
@@ -72,7 +71,7 @@ class LoanViewSet(viewsets.ModelViewSet):
         due = now+extention
         try:
             loan.due_date = due
-            loan.save
+            loan.save()
         except Loan.DoesNotExist:
             return Response({'error': 'Loan does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'status': 'Days added successfully.'}, status=status.HTTP_201_CREATED)
